@@ -1,0 +1,468 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://root:root@localhost/camp_db"
+}
+
+model aircraft {
+  id                   String                         @id(map: "PK_46f8c680e9ff88a752b7834bba4") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  manufacturer         String?                        @db.VarChar
+  manufacturerDate     DateTime                       @db.Timestamptz(6)
+  regNumber            String                         @unique(map: "UQ_8a659863613ce3a92a9c5023163") @db.VarChar
+  currentLocation      aircraft_currentlocation_enum?
+  status               aircraft_status_enum?
+  airline              String?                        @db.VarChar
+  owner                String?                        @db.VarChar
+  aircraftType         aircraft_aircrafttype_enum?
+  maximumTakeOffWeight Float?
+  maximumCruiseSpeed   Float?
+  rangeOfFlight        Float?
+  rentBefore           DateTime?                      @db.Timestamptz(6)
+  serialNumber         String?                        @unique(map: "UQ_6a14f09e107710af465b47c6680") @db.VarChar
+  modelId              String                         @db.Uuid
+  createdAt            DateTime                       @default(now()) @db.Timestamptz(6)
+  updatedAt            DateTime                       @default(now()) @db.Timestamptz(6)
+  projectedHours       Int                            @default(0)
+  projectedCycles      Int                            @default(0)
+  companyId            String                         @db.Uuid
+  inService            DateTime                       @db.Timestamptz(6)
+  companies            companies                      @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "FK_38d7173b627898e243285507853")
+  aircraftModel        aircraftModel                  @relation(fields: [modelId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_750d10ac9968b391826c98b7a08")
+  aircraftComponents   aircraftComponents[]
+  counter              counter[]
+  maintenanceProgram   maintenanceProgram[]
+  tasks                tasks[]
+  workPackage          workPackage[]
+}
+
+model aircraftComponents {
+  id                 String               @id(map: "PK_fa80ad2d8bb5c9c75e52ddb6e10") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  createdAt          DateTime             @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime             @default(now()) @db.Timestamptz(6)
+  name               String               @db.VarChar
+  aircraftId         String               @db.Uuid
+  aircraft           aircraft             @relation(fields: [aircraftId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_fdcf218933d3abc6b2d80424c74")
+  workCardComponents workCardComponents[]
+}
+
+model aircraftModel {
+  id        String     @id(map: "PK_519c1e059da93c54eab4d70c1c1") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  modelName String     @db.VarChar
+  createdAt DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime   @default(now()) @db.Timestamptz(6)
+  aircraft  aircraft[]
+}
+
+model companies {
+  id          String        @id(map: "PK_d4bc3e82a314fa9e29f652c2c22") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name        String        @db.VarChar
+  description String?       @db.VarChar
+  contact     String?       @db.VarChar
+  info        String?       @db.VarChar
+  createdAt   DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime      @default(now()) @db.Timestamptz(6)
+  aircraft    aircraft[]
+  user        user[]
+  workPackage workPackage[]
+}
+
+model component {
+  id         String    @id(map: "PK_c084eba2d3b157314de79135f09") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  createdAt  DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime  @default(now()) @db.Timestamptz(6)
+  partNumber String?   @db.VarChar
+  partName   String?   @db.VarChar
+  counter    counter[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model counter {
+  id                    String                  @id(map: "PK_012f437b30fcf5a172841392ef3") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  createdAt             DateTime                @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime                @default(now()) @db.Timestamptz(6)
+  name                  String                  @db.VarChar
+  kind                  counter_kind_enum
+  measure               counter_measure_enum
+  measureValue          Float                   @default(0)
+  aircraftId            String?                 @db.Uuid
+  dueListTaskId         String?                 @db.Uuid
+  componentId           String?                 @db.Uuid
+  tolerance             Float?
+  nextDue               String?                 @db.VarChar
+  type                  String?                 @db.VarChar
+  aircraft              aircraft?               @relation(fields: [aircraftId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_1d80ed1f1dbe7c3340e30ce6de2")
+  tasks                 tasks?                  @relation(fields: [dueListTaskId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_39e2576a1b363a42d4e25d18868")
+  component             component?              @relation(fields: [componentId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_5de86ab2e6fe29789d3f09e5e3f")
+  engine_health_records engine_health_records[]
+}
+
+model documents {
+  id                     String                   @id(map: "PK_ac51aa5181ee2036f5ca482857c") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  createdAt              DateTime                 @default(now()) @db.Timestamptz(6)
+  updatedAt              DateTime                 @default(now()) @db.Timestamptz(6)
+  number                 String?                  @db.VarChar
+  type                   documents_type_enum
+  documentId             String                   @db.VarChar
+  deletedAt              DateTime?                @db.Timestamptz(6)
+  work_package_documents work_package_documents[]
+}
+
+model engine_health_record_values {
+  id                    String                @id(map: "PK_8fdced02fc5ad1184ab6426d39d") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  createdAt             DateTime              @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime              @default(now()) @db.Timestamptz(6)
+  recordId              String                @db.Uuid
+  name                  String                @db.VarChar
+  value                 String                @db.VarChar
+  unit                  String                @db.VarChar
+  engine_health_records engine_health_records @relation(fields: [recordId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_153b5ccccde472452e73df43905")
+}
+
+model engine_health_records {
+  id                          String                        @id(map: "PK_3662701b6cec914b5bad86cf37b") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  createdAt                   DateTime                      @default(now()) @db.Timestamptz(6)
+  updatedAt                   DateTime                      @default(now()) @db.Timestamptz(6)
+  phase                       String                        @db.VarChar
+  date                        DateTime                      @db.Timestamptz(6)
+  details                     Json?
+  counterId                   String                        @db.Uuid
+  engine_health_record_values engine_health_record_values[]
+  counter                     counter                       @relation(fields: [counterId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_304a12c822d996d5d556193c724")
+}
+
+model log {
+  id        String   @id(map: "PK_350604cbdf991d5930d9e618fbd") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  log       Json
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  userId    String?  @db.Uuid
+  requestId String   @db.VarChar
+  updatedAt DateTime @default(now()) @db.Timestamptz(6)
+  user      user?    @relation(fields: [userId], references: [id], onDelete: Cascade, map: "FK_cea2ed3a494729d4b21edbd2983")
+}
+
+model maintenanceProgram {
+  id             String                                @id(map: "PK_1ec73260d245ad3baf57b32fae2") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  rev            String?                               @db.VarChar
+  tlmc           String?                               @db.VarChar
+  chapter        String?                               @db.VarChar
+  title          String?                               @db.VarChar
+  zone           String?                               @db.VarChar
+  access         String?                               @db.VarChar
+  manHoursTask   String?                               @db.VarChar
+  manHoursAccess String?                               @db.VarChar
+  threshold      String?                               @db.VarChar
+  interval       Int?
+  intervalUnit   maintenanceProgram_intervalunit_enum?
+  note           String?                               @db.VarChar
+  applicability  String?                               @db.VarChar
+  aircraftId     String                                @db.Uuid
+  amtossNdt      String?                               @db.VarChar
+  type           maintenanceProgram_type_enum?
+  createdAt      DateTime                              @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime                              @default(now()) @db.Timestamptz(6)
+  deletedAt      DateTime?                             @db.Timestamptz(6)
+  partNumber     String?                               @db.VarChar
+  serialNumber   String?                               @db.VarChar
+  related        maintenanceProgram_related_enum       @default(AIRCRAFT)
+  comment        String?                               @db.VarChar
+  link           String?                               @db.VarChar
+  aircraft       aircraft                              @relation(fields: [aircraftId], references: [id], onDelete: Cascade, map: "FK_580c476241a96eddd6720bbe895")
+  tasks          tasks[]
+}
+
+model migrations {
+  id        Int    @id(map: "PK_8c82d7f526340ab734260ea46be") @default(autoincrement())
+  timestamp BigInt
+  name      String @db.VarChar
+}
+
+model roles {
+  id          String        @id(map: "PK_c1433d71a4838793a49dcad46ab") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  createdAt   DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime      @default(now()) @db.Timestamptz(6)
+  name        String        @db.VarChar
+  rolesRoutes rolesRoutes[]
+  user        user[]
+}
+
+model rolesRoutes {
+  id        String   @id(map: "PK_de5a570326e1fd1620c88ca2988") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @db.Timestamptz(6)
+  roleId    String   @db.Uuid
+  routeId   String   @db.Uuid
+  routes    routes   @relation(fields: [routeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_af3c4ceb234c288a2ccbffa6d33")
+  roles     roles    @relation(fields: [roleId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_f9ee3c8d96deff3316fbe2e9f78")
+}
+
+model routes {
+  id          String             @id(map: "PK_76100511cdfa1d013c859f01d8b") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  createdAt   DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime           @default(now()) @db.Timestamptz(6)
+  value       String             @db.VarChar
+  method      routes_method_enum
+  rolesRoutes rolesRoutes[]
+}
+
+model taskToTask {
+  id                                    String   @id(map: "PK_0722badd8134e2249a6864b8ee5") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  taskId                                String   @db.Uuid
+  relatedTaskId                         String   @db.Uuid
+  createdAt                             DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt                             DateTime @default(now()) @db.Timestamptz(6)
+  tasks_taskToTask_taskIdTotasks        tasks    @relation("taskToTask_taskIdTotasks", fields: [taskId], references: [id], onDelete: Cascade, map: "FK_088f0ef52845541099b1106e9b3")
+  tasks_taskToTask_relatedTaskIdTotasks tasks    @relation("taskToTask_relatedTaskIdTotasks", fields: [relatedTaskId], references: [id], onDelete: Cascade, map: "FK_1cefd88c664c10e4eb8e2e37816")
+
+  @@unique([taskId, relatedTaskId], map: "UQ_11c73750d01a9ec7eacf453db77")
+}
+
+model tasks {
+  id                                         String              @id(map: "PK_69b9212545ae6622e81d88bcdf4") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  status                                     tasks_status_enum   @default(draft)
+  aircraftId                                 String              @db.Uuid
+  createdAt                                  DateTime            @default(now()) @db.Timestamptz(6)
+  updatedAt                                  DateTime            @default(now()) @db.Timestamptz(6)
+  deletedAt                                  DateTime?           @db.Timestamptz(6)
+  creatorId                                  String              @db.Uuid
+  updaterId                                  String?             @db.Uuid
+  workPackageId                              String?             @db.Uuid
+  maintenanceProgramId                       String?             @db.Uuid
+  counter                                    counter[]
+  taskToTask_taskToTask_taskIdTotasks        taskToTask[]        @relation("taskToTask_taskIdTotasks")
+  taskToTask_taskToTask_relatedTaskIdTotasks taskToTask[]        @relation("taskToTask_relatedTaskIdTotasks")
+  workPackage                                workPackage?        @relation(fields: [workPackageId], references: [id], onDelete: Cascade, map: "FK_07f198ff6eedd72c51531c0a03a")
+  aircraft                                   aircraft            @relation(fields: [aircraftId], references: [id], onDelete: Cascade, map: "FK_38fcb1026905dff6472de6625de")
+  maintenanceProgram                         maintenanceProgram? @relation(fields: [maintenanceProgramId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_77ce40076b8d6986b0f8729ac80")
+  user_tasks_creatorIdTouser                 user                @relation("tasks_creatorIdTouser", fields: [creatorId], references: [id], onDelete: Cascade, map: "FK_90bc62e96b48a437a78593f78f0")
+  user_tasks_updaterIdTouser                 user?               @relation("tasks_updaterIdTouser", fields: [updaterId], references: [id], onDelete: Cascade, map: "FK_93f9ae225b90062741513bf6be2")
+  workCardTasks                              workCardTasks[]
+}
+
+model user {
+  id                                          String        @id(map: "PK_cace4a159ff9f2512dd42373760") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  login                                       String        @unique(map: "UQ_a62473490b3e4578fd683235c5e") @db.VarChar
+  firstName                                   String        @db.VarChar
+  lastName                                    String?       @db.VarChar
+  middleName                                  String?       @db.VarChar
+  password                                    String        @db.VarChar
+  phone                                       String        @unique(map: "UQ_8e1f623798118e629b46a9e6299") @db.VarChar
+  email                                       String        @unique(map: "UQ_e12875dfb3b1d92d7d7c5377e22") @db.VarChar
+  createdAt                                   DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt                                   DateTime      @default(now()) @db.Timestamptz(6)
+  companyId                                   String        @db.Uuid
+  roleId                                      String        @db.Uuid
+  log                                         log[]
+  tasks_tasks_creatorIdTouser                 tasks[]       @relation("tasks_creatorIdTouser")
+  tasks_tasks_updaterIdTouser                 tasks[]       @relation("tasks_updaterIdTouser")
+  companies                                   companies     @relation(fields: [companyId], references: [id], onDelete: Cascade, map: "FK_86586021a26d1180b0968f98502")
+  roles                                       roles         @relation(fields: [roleId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_c28e52f758e7bbc53828db92194")
+  workCard                                    workCard[]
+  workPackage_workPackage_createdByIdTouser   workPackage[] @relation("workPackage_createdByIdTouser")
+  workPackage_workPackage_completedByIdTouser workPackage[] @relation("workPackage_completedByIdTouser")
+}
+
+model workCard {
+  id                 String               @id(map: "PK_a547c9d920be9a594fcacc5a094") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  createdAt          DateTime             @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime             @default(now()) @db.Timestamptz(6)
+  externalId         String?              @db.VarChar
+  workPackageId      String?              @db.Uuid
+  status             workCard_status_enum
+  title              String               @db.VarChar
+  comment            String?              @db.VarChar
+  completedAt        DateTime?            @db.Timestamptz(6)
+  completedById      String?              @db.Uuid
+  completedByName    String?              @db.Uuid
+  actualManHours     Decimal?             @db.Decimal
+  defects            Boolean?
+  defectsLink        String?              @db.VarChar
+  deletedAt          DateTime?            @db.Timestamptz(6)
+  startedAt          DateTime?            @db.Timestamptz(6)
+  taskChanged        Boolean              @default(false)
+  user               user?                @relation(fields: [completedById], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_68b92316d61e985ad8e556ba286")
+  workPackage        workPackage?         @relation(fields: [workPackageId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ac05b93132d53e8324e0439b98a")
+  workCardComponents workCardComponents[]
+  workCardTasks      workCardTasks[]
+}
+
+model workCardComponents {
+  id                  String                                        @id(map: "PK_0369d1968c4b9504433c364619f") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  createdAt           DateTime                                      @default(now()) @db.Timestamptz(6)
+  updatedAt           DateTime                                      @default(now()) @db.Timestamptz(6)
+  action              Unsupported("workCardComponents_action_enum")
+  workCardId          String                                        @db.Uuid
+  aircraftComponentId String                                        @db.Uuid
+  aircraftComponents  aircraftComponents                            @relation(fields: [aircraftComponentId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_32d80c2dbc71c764c1fdcaeb866")
+  workCard            workCard                                      @relation(fields: [workCardId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_e588bc8cc27ee0c268e6542fe43")
+}
+
+model workCardTasks {
+  id         String   @id(map: "PK_a07960091c2327aa5180ba2fa0b") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime @default(now()) @db.Timestamptz(6)
+  workCardId String   @db.Uuid
+  taskId     String   @db.Uuid
+  workCard   workCard @relation(fields: [workCardId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_5aa2a6ffee3838268a9f16377f9")
+  tasks      tasks    @relation(fields: [taskId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_95f209356a2d03d333b80f855ea")
+}
+
+model workPackage {
+  id                                   String                   @id(map: "PK_6da981773ea44821c333cb69315") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  createdAt                            DateTime                 @default(now()) @db.Timestamptz(6)
+  updatedAt                            DateTime                 @default(now()) @db.Timestamptz(6)
+  location                             String?                  @db.VarChar
+  companyId                            String?                  @db.Uuid
+  completedAt                          DateTime?                @db.Timestamptz(6)
+  completedById                        String?                  @db.Uuid
+  completedByName                      String?                  @db.VarChar
+  aircraftId                           String                   @db.Uuid
+  createdById                          String                   @db.Uuid
+  deletedAt                            DateTime?                @db.Timestamptz(6)
+  status                               workPackage_status_enum
+  revision                             Decimal                  @default(0) @db.Decimal
+  number                               Int                      @default(autoincrement())
+  startedAt                            DateTime?                @db.Timestamptz(6)
+  actualManHours                       Decimal?                 @db.Decimal
+  lastDoneOnClose                      DateTime?                @db.Timestamptz(6)
+  hoursOnClose                         Decimal?                 @db.Decimal
+  cyclesOnClose                        Decimal?                 @db.Decimal
+  note                                 String?                  @db.VarChar
+  plannedStartedAt                     DateTime?                @db.Timestamptz(6)
+  plannedCompletedAt                   DateTime?                @db.Timestamptz(6)
+  closedAt                             DateTime?                @db.Timestamptz(6)
+  cancelledAt                          DateTime?                @db.Timestamptz(6)
+  tasks                                tasks[]
+  workCard                             workCard[]
+  user_workPackage_createdByIdTouser   user                     @relation("workPackage_createdByIdTouser", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_135ab46d8f495085699dca9fa10")
+  aircraft                             aircraft                 @relation(fields: [aircraftId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_1f1ea1d2018bf0105db3d0eb32b")
+  user_workPackage_completedByIdTouser user?                    @relation("workPackage_completedByIdTouser", fields: [completedById], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_a55db118ae5944a8fcc074f4162")
+  companies                            companies?               @relation(fields: [companyId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ca840babf91a8c983c33051ffc4")
+  work_package_documents               work_package_documents[]
+}
+
+model work_package_documents {
+  id            String      @id(map: "PK_b8918d25fb594d5c39c8e69baf7") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  createdAt     DateTime    @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime    @default(now()) @db.Timestamptz(6)
+  workPackageId String      @db.Uuid
+  documentId    String      @db.Uuid
+  documents     documents   @relation(fields: [documentId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_40aca4c0fe929b24f4b5ebd2f14")
+  workPackage   workPackage @relation(fields: [workPackageId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_841c7fd3d52a0a909d1a139e935")
+}
+
+enum aircraft_aircrafttype_enum {
+  commercial
+  military
+  private
+}
+
+enum aircraft_currentlocation_enum {
+  airport
+  hangar
+}
+
+enum aircraft_status_enum {
+  serviceable
+  in_flight
+  aog
+  storage
+  maintenance
+}
+
+enum counter_kind_enum {
+  AIRCRAFT
+  AIRCRAFT_APU
+  AIRCRAFT_ENG1
+  AIRCRAFT_ENG2
+  COMPONENT
+  TASK
+  AIRCRAFT_ENG3
+  AIRCRAFT_ENG4
+}
+
+enum counter_measure_enum {
+  HRS
+  CYC
+  CAL
+}
+
+enum documents_type_enum {
+  other
+}
+
+enum maintenanceProgram_intervalunit_enum {
+  H
+  M
+  L
+  AH
+  AC
+  AL
+  EH
+  EC
+  EL
+  COH
+  COM
+  COL
+  DY
+}
+
+enum maintenanceProgram_related_enum {
+  AIRCRAFT
+  AIRCRAFT_APU
+  AIRCRAFT_ENG1
+  AIRCRAFT_ENG2
+  AIRCRAFT_ENG3
+  AIRCRAFT_ENG4
+  COMPONENT
+  TASK
+}
+
+enum maintenanceProgram_type_enum {
+  HOURLY
+  CALENDAR
+  LANDING
+  OTHER
+  ENGINE
+  APU
+  STORAGE_AND_RTS
+  COMPONENTS
+  LLP
+  MAINTENANCE
+}
+
+enum routes_method_enum {
+  GET
+  HEAD
+  POST
+  PUT
+  DELETE
+  CONNECT
+  OPTIONS
+  TRACE
+  PATCH
+}
+
+enum tasks_status_enum {
+  draft
+  wait
+  in_work
+  deleted
+  closed
+}
+
+enum workCard_status_enum {
+  draft
+  open
+  closed
+  cancelled
+}
+
+enum workPackage_status_enum {
+  draft
+  open
+  closed
+  cancelled
+}
